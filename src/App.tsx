@@ -6,11 +6,15 @@ import { GlobalStyle } from '@/styles/global';
 
 import { Router } from '@/routes';
 
+import { PostContextProvider } from '@/context/posts';
+
 function App() {
   return (
     <ThemeProvider theme={defaultTheme}>
       <BrowserRouter>
-        <Router />
+        <PostContextProvider>
+          <Router />
+        </PostContextProvider>
       </BrowserRouter>
 
       <GlobalStyle />

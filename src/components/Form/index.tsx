@@ -9,8 +9,11 @@ import { Input } from '@/components/Input';
 import { Textarea } from '@/components/Textarea';
 import { LinkButton } from '@/components/LinkButton';
 import { Button } from '@/components/Button';
+import { ErrorMessage } from '@/components/ErrorMessage';
 
 import { acceptImageTypes } from '@/helpers/img-helper';
+
+import { usePosts } from '@/hooks/posts';
 
 import {
   Container,
@@ -22,23 +25,25 @@ import {
 } from './styles';
 
 const postValidationSchema = z.object({
-  image: z.string().url('A imagem precisa ser uma URL válida'),
-  name: z.string().max(3, 'O nome precisa ter no mínimo 3 caracteres'),
-  description: z.string().min(3, 'O nome precisa ter no mínimo 3 caracteres'),
+  image: z.string(),
+  name: z.string().max(30, 'O nome precisa ter no mínimo 3 caracteres'),
+  description: z
+    .string()
+    .min(10, 'A descrição precisa ter no mínimo 10 caracteres'),
 });
 
-type PostValidationSchema = z.infer<typeof postValidationSchema>;
+export type PostValidationSchema = z.infer<typeof postValidationSchema>;
 
 export function Form() {
+  const { addingPosts } = usePosts();
+
   const {
+    control,
     handleSubmit,
-    register,
-    reset,
     formState: { errors, isValid },
     watch,
     setValue,
-    getValues,
-  } = useForm<PostValidationSchema>({
+  } = useForm({
     resolver: zodResolver(postValidationSchema),
   });
 
@@ -53,13 +58,26 @@ export function Form() {
 
   const image = watch('image');
 
-  const handleSave = useCallback((data: PostValidationSchema) => {
-    console.log('data', data);
-  }, []);
-
   const handleClear = useCallback(() => {
-    reset();
-  }, [reset]);
+    setValue('name', '');
+    setValue('description', '');
+    setValue('image', '');
+  }, [setValue]);
+
+  const handleSave = useCallback(
+    (formData) => {
+      console.log('formData', formData);
+
+      const data = {
+        ...formData,
+        id: new Date().getTime().toString(),
+      };
+
+      addingPosts(data);
+      handleClear();
+    },
+    [addingPosts, handleClear]
+  );
 
   const clearImage = useCallback(() => {
     setValue('image', '');
@@ -71,9 +89,9 @@ export function Form() {
         <Dropzone onDrop={handleUploadFile} accept={acceptImageTypes}>
           {({ getRootProps, getInputProps }) => (
             <ImageContainer error={!!errors.image} {...getRootProps()}>
-              <input {...getInputProps()} {...register('image')} readOnly />
+              <input {...getInputProps()} readOnly />
               {image && !errors.image ? (
-                <ImagePreview src={getValues('image')} />
+                <ImagePreview src={image} />
               ) : (
                 <Image size={24} />
               )}
@@ -83,18 +101,19 @@ export function Form() {
         {image && !errors.image && (
           <TrashButton size={24} onClick={clearImage} />
         )}
+
+        {errors && errors.image && errors.image.message && (
+          <ErrorMessage message={errors.image.message as string} />
+        )}
       </DropzoneContainer>
 
       <Input
         placeholder='Digite seu nome'
-        {...register('name')}
-        error={errors.name}
+        type='text'
+        name='name'
+        control={control}
       />
-      <Textarea
-        placeholder='Mensagem'
-        {...register('description')}
-        error={errors.description}
-      />
+      <Textarea control={control} name='description' placeholder='Mensagem' />
 
       <FormFooter>
         <LinkButton type='button' onClick={handleClear}>

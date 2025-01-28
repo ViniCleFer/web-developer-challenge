@@ -43,10 +43,3 @@ export const StyledInput = styled.input<StyledInputProps>`
       border-color: ${props.theme['red-500']};
     `};
 `;
-
-export const ErrorMessage = styled.span`
-  width: 100%;
-  margin-top: 5px;
-  color: ${(props) => props.theme['red-500']};
-  font-size: 0.75rem;
-`;
